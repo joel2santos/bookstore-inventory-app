@@ -16,6 +16,13 @@ export default defineConfig(({ mode }) => {
         "@providers": new URL("./src/providers", import.meta.url).pathname,
       },
     },
+    test: {
+      environment: "jsdom",
+      globals: true,
+      setupFiles: ["./src/test/setup.ts"],
+      include: ["src/**/*.{test,spec}.{ts,tsx}"],
+      exclude: ["node_modules", "dist"],
+    },
     server: {
       port: 5173,
       proxy: {
