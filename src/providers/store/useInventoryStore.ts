@@ -5,8 +5,32 @@ import type { Book } from "@domain";
 
 export type InventoryFilterMode = "all" | "category" | "low-stock";
 
+const DEFAULT_CATEGORIES = [
+  "Design",
+  "Economics",
+  "Fantasy",
+  "History",
+  "Literatura Clásica",
+  "Mystery",
+  "Philosophy",
+  "Poetry",
+  "Science Fiction",
+  "Software Engineering",
+];
+
+function mergeCategories(existing: string[], books: Book[]): string[] {
+  const set = new Set(existing);
+  for (const b of books) {
+    if (b.category.trim()) {
+      set.add(b.category.trim());
+    }
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
 interface InventoryState {
   books: Book[];
+  knownCategories: string[];
   count: number;
   page: number;
   hasNext: boolean;
@@ -40,6 +64,7 @@ function getErrorMessage(err: unknown, fallback: string): string {
 
 export const useInventoryStore = create<InventoryState>((set, get) => ({
   books: [],
+  knownCategories: DEFAULT_CATEGORIES,
   count: 0,
   page: 1,
   hasNext: false,
@@ -73,13 +98,14 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
               )
             : await bookRepository.list(targetPage, signal);
 
-      set({
+      set((prev) => ({
         books: result.results,
+        knownCategories: mergeCategories(prev.knownCategories, result.results),
         count: result.count,
         hasNext: Boolean(result.next),
         hasPrevious: Boolean(result.previous),
         isLoading: false,
-      });
+      }));
     } catch (err) {
       if (isAbortError(err)) return;
       const message = getErrorMessage(err, "Failed to load books");

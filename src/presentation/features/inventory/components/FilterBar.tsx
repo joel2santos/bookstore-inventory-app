@@ -1,11 +1,12 @@
 import React from "react";
-import { AlertTriangle, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, RotateCcw, SlidersHorizontal, Tag } from "lucide-react";
 import type { InventoryFilterMode } from "@providers";
 import { Button, Field } from "@presentation/components";
 
 export interface FilterBarProps {
-  categoryInput: string;
-  onCategoryInputChange: (value: string) => void;
+  categories: string[];
+  selectedCategory: string;
+  onCategoryChange: (value: string) => void;
   filterMode: InventoryFilterMode;
   lowStockThreshold: number;
   onToggleLowStock: (enabled: boolean, threshold?: number) => void;
@@ -20,28 +21,33 @@ const THRESHOLD_OPTIONS = [
 ];
 
 export const FilterBar: React.FC<FilterBarProps> = ({
-  categoryInput,
-  onCategoryInputChange,
+  categories,
+  selectedCategory,
+  onCategoryChange,
   filterMode,
   lowStockThreshold,
   onToggleLowStock,
   onReset,
 }) => {
   const isLowStockActive = filterMode === "low-stock";
-  const hasActiveFilter = filterMode !== "all" || categoryInput.trim() !== "";
+  const hasActiveFilter = filterMode !== "all" || selectedCategory !== "";
+
+  const categoryOptions = [
+    { label: "All categories", value: "" },
+    ...categories.map((cat) => ({ label: cat, value: cat })),
+  ];
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
         <div className="w-full sm:max-w-xs">
           <Field
-            type="text"
-            name="categorySearch"
-            placeholder="Search by category..."
-            value={categoryInput}
-            onChange={(e) => onCategoryInputChange(e.target.value)}
-            leftIcon={<Search className="h-4 w-4" />}
-            aria-label="Search by category"
+            type="select"
+            name="categoryFilter"
+            value={selectedCategory}
+            onChange={(e) => onCategoryChange(e.target.value)}
+            leftIcon={<Tag className="h-4 w-4" />}
+            options={categoryOptions}
           />
         </div>
 

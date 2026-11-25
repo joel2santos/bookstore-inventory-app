@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import type { Book } from "@domain";
@@ -12,7 +12,6 @@ import {
   Pagination,
   Text,
 } from "@presentation/components";
-import { useDebounce } from "@presentation/hooks";
 import {
   AppRoutes,
   bookDetailPath,
@@ -24,6 +23,7 @@ const _InventoryBody = () => {
   const navigate = useNavigate();
   const {
     books,
+    knownCategories,
     count,
     page,
     hasNext,
@@ -41,29 +41,13 @@ const _InventoryBody = () => {
     deleteBook,
   } = useInventoryStore();
 
-  const [categoryInput, setCategoryInput] = useState(categoryQuery);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
-  const debouncedCategory = useDebounce(categoryInput, 350);
-  const isInitialMount = useRef(true);
 
   useEffect(() => {
     const controller = new AbortController();
     void fetchBooks(1, controller.signal);
     return () => controller.abort();
   }, [fetchBooks]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    setCategoryFilter(debouncedCategory);
-  }, [debouncedCategory, setCategoryFilter]);
-
-  const handleReset = () => {
-    setCategoryInput("");
-    resetFilters();
-  };
 
   const handleConfirmDelete = async () => {
     if (!bookToDelete) return;
@@ -95,12 +79,13 @@ const _InventoryBody = () => {
       </div>
 
       <FilterBar
-        categoryInput={categoryInput}
-        onCategoryInputChange={setCategoryInput}
+        categories={knownCategories}
+        selectedCategory={filterMode === "category" ? categoryQuery : ""}
+        onCategoryChange={setCategoryFilter}
         filterMode={filterMode}
         lowStockThreshold={lowStockThreshold}
         onToggleLowStock={setLowStockFilter}
-        onReset={handleReset}
+        onReset={resetFilters}
       />
 
       {isLoading ? (
@@ -119,13 +104,13 @@ const _InventoryBody = () => {
           description={
             filterMode === "all"
               ? "Add your first book to start managing catalog costs and pricing."
-              : "Try adjusting your category search or low-stock threshold."
+              : "Try selecting another category or adjusting the low-stock threshold."
           }
           actionLabel={filterMode === "all" ? "Add Book" : "Clear Filters"}
           onAction={
             filterMode === "all"
               ? () => navigate(AppRoutes.BOOK_CREATE)
-              : handleReset
+              : resetFilters
           }
         />
       ) : (
